@@ -10,20 +10,21 @@ The application orchestrates concurrent, non-blocking REST calls across two exte
 By comparing the `lowest_available_listing` against the `recent_sales_average` and historical trends, the scanner identifies **Arbitrage** opportunities (undervalued listings) and market **Spikes** (surging sales averages).
 
 ## How to Run (Using Docker)
-This project uses the Jib Gradle plugin to assemble the Ktor application into a lightweight, daemonless Docker image tarball.
+The project can be run directly using the provided `run-docker.sh` script.
 
-If you have extracted the `jib-image.tar` file from the project archive, you can load and run it directly in your local Docker environment without needing to execute a build step.
+### Using the Run Script
+Execute the following command to run the application:
+```bash
+chmod +x run-docker.sh
+./run-docker.sh
+```
 
-1. **Load the image into Docker:**
-   ```bash
-   docker load -i jib-image.tar
-   ```
-   *Note: This will output the loaded image name and tag, typically mana-pool-application:0.0.1.*
-2. **Run the container:**
-   ```bash
-   docker run -p 8080:8080 mana-pool-application:0.0.1
-   ```
-3. **Execute a scan:**
+## API Documentation
+Once the application is running, the Swagger UI is available at:
+`http://localhost:8080/swagger`
+
+## Usage Examples
+1. **Execute a scan:**
    ```bash
    curl -X POST http://localhost:8080/scan \
      -H "Content-Type: application/json" \

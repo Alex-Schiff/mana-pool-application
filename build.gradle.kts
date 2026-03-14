@@ -61,3 +61,10 @@ dependencies {
     testImplementation("io.mockk:mockk:$mockk_version")
     testImplementation("io.ktor:ktor-client-mock:$ktor_version")
 }
+
+ktor {
+    docker {
+        localImageName = "alexschiff/mana-pool-application"
+        imageTag = "0.0.1"
+    }
+}
