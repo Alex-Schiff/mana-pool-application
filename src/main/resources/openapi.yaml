@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: Mana Pool Scanner API
+  version: 0.0.1
+  contact:
+    url: https://github.com/Alex-Schiff/mana-pool-application
+paths:
+  /scan:
+    post:
+      summary: Scan for arbitrage and spike opportunities
+      operationId: scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+      responses:
+        '200':
+          description: Scan results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanResult'
+        '400':
+          description: Invalid request
+components:
+  schemas:
+    ScanRequest:
+      type: object
+      required:
+        - target_sets
+        - min_card_value
+        - arbitrage_threshold_percent
+        - spike_threshold_percent
+      properties:
+        target_sets:
+          type: array
+          items:
+            type: string
+        min_card_value:
+          type: string
+          pattern: '^\$\d+\.\d{2}$'
+        arbitrage_threshold_percent:
+          type: number
+          format: double
+        spike_threshold_percent:
+          type: number
+          format: double
+      example:
+        target_sets:
+          - ROE
+        min_card_value: "$10.00"
+        arbitrage_threshold_percent: 25.0
+        spike_threshold_percent: 30.0
+    ScanResult:
+      type: object
+      properties:
+        arbitrage_opportunities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArbitrageOpportunity'
+        spike_opportunities:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpikeOpportunity'
+    ArbitrageOpportunity:
+      type: object
+      properties:
+        card_name:
+          type: string
+        set_name:
+          type: string
+        recent_sales_average:
+          type: string
+        lowest_available_listing:
+          type: string
+        potential_profit:
+          type: string
+    SpikeOpportunity:
+      type: object
+      properties:
+        card_name:
+          type: string
+        set_name:
+          type: string
+        recent_sales_average:
+          type: string
+        historical_average:
+          type: string
+        spike_percent:
+          type: number
+          format: double

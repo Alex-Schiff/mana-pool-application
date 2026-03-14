@@ -16,6 +16,8 @@ Here's a list of features included in this project:
 | Name                                               | Description                                                 |
 |----------------------------------------------------|-------------------------------------------------------------|
 | [Routing](https://start.ktor.io/p/routing-default) | Allows to define structured routes and associated handlers. |
+| [Swagger UI](http://0.0.0.0:8080/swagger) | Provides an interactive UI to explore the API. |
+| [OpenAPI](http://0.0.0.0:8080/openapi) | Provides the OpenAPI specification in YAML format. |
 
 ## Building & Running
 
