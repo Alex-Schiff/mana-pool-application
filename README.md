@@ -1,42 +1,54 @@
-# mana-pool-application
+# Mana Pool Arbitrage & Spike Scanner
 
-This project was created using the [Ktor Project Generator](https://start.ktor.io).
+## Overview
+The Mana Pool Arbitrage & Spike Scanner is a stateless backend service built with Kotlin and Ktor. It acts as a market analysis tool for Magic: The Gathering, specifically designed to find discrepancies between current market listings and recent sales data on Mana Pool's website.
 
-Here are some useful links to get you started:
+The application orchestrates concurrent, non-blocking REST calls across two external APIs:
+1. **Scryfall API:** Resolves standard MTG set codes into distinct Scryfall card IDs.
+2. **Mana Pool API:** Fetches the latest pricing and sales data for those specific IDs.
 
-- [Ktor Documentation](https://ktor.io/docs/home.html)
-- [Ktor GitHub page](https://github.com/ktorio/ktor)
-- The [Ktor Slack chat](https://app.slack.com/client/T09229ZC6/C0A974TJ9). You'll need
-  to [request an invite](https://surveys.jetbrains.com/s3/kotlin-slack-sign-up) to join.
+By comparing the `lowest_available_listing` against the `recent_sales_average` and historical trends, the scanner identifies **Arbitrage** opportunities (undervalued listings) and market **Spikes** (surging sales averages).
 
-## Features
+## How to Run (Using Docker)
+This project uses the Jib Gradle plugin to assemble the Ktor application into a lightweight, daemonless Docker image tarball.
 
-Here's a list of features included in this project:
+If you have extracted the `jib-image.tar` file from the project archive, you can load and run it directly in your local Docker environment without needing to execute a build step.
 
-| Name                                               | Description                                                 |
-|----------------------------------------------------|-------------------------------------------------------------|
-| [Routing](https://start.ktor.io/p/routing-default) | Allows to define structured routes and associated handlers. |
-| [Swagger UI](http://0.0.0.0:8080/swagger) | Provides an interactive UI to explore the API. |
-| [OpenAPI](http://0.0.0.0:8080/openapi) | Provides the OpenAPI specification in YAML format. |
+1. **Load the image into Docker:**
+   ```bash
+   docker load -i jib-image.tar
+   ```
+   *Note: This will output the loaded image name and tag, typically mana-pool-application:0.0.1.*
+2. **Run the container:**
+   ```bash
+   docker run -p 8080:8080 mana-pool-application:0.0.1
+   ```
+3. **Execute a scan:**
+   ```bash
+   curl -X POST http://localhost:8080/scan \
+     -H "Content-Type: application/json" \
+     -d '{
+           "target_sets": ["ROE"],
+           "min_card_value": 5.0,
+           "arbitrage_threshold_percent": 25.0,
+           "spike_threshold_percent": 30.0
+         }'
+   ```
+## Future Enhancements & Productionalization
+To respect the requested one-hour timebox for this assignment, development was strictly focused on core API orchestration, coroutine concurrency, and deep immutability. If this were a production application, the following enhancements would be immediately targeted for the next sprint:
 
-## Building & Running
+### Performance & Caching
+* **Redis Caching Layer:** The translation of MTG set codes to Scryfall IDs is static data that rarely changes. Introducing a Redis cache for Scryfall API responses would drastically cut down execution time and reduce external rate-limiting risks.
+* **Latency Diagnostics:** Current performance under heavy concurrent loads (e.g., scanning massive sets like *Commander Masters*) isn't quite at the target threshold. I would prioritize profiling to diagnose exactly where I/O bottlenecks or JSON deserialization slowdowns are occurring.
 
-To build or run the project, use one of the following tasks:
+### Data Validation
+* **Flexible Set Code Validation:** The current request validation enforces 3-character MTG set codes. While this works for most sets, it breaks for some sets (like `PUMA`). The validation rules need to be expanded to accommodate the full range of Scryfall-supported set codes.
 
-| Task                                    | Description                                                          |
-|-----------------------------------------|----------------------------------------------------------------------|
-| `./gradlew test`                        | Run the tests                                                        |
-| `./gradlew build`                       | Build everything                                                     |
-| `./gradlew buildFatJar`                 | Build an executable JAR of the server with all dependencies included |
-| `./gradlew buildImage`                  | Build the docker image to use with the fat JAR                       |
-| `./gradlew publishImageToLocalRegistry` | Publish the docker image locally                                     |
-| `./gradlew run`                         | Run the server                                                       |
-| `./gradlew runDocker`                   | Run using the local docker image                                     |
+### Architecture & Refactoring
+* **Domain-Driven Package Structure:** The current `Models.kt` file is a monolith. This should be refactored and separated into distinct files grouped by API boundaries (e.g., `ScryfallModels.kt`, `ManaPoolModels.kt`, and `ScannerModels.kt`).
+* **Dependency Management:** Migrate the Gradle build script to use a `libs.versions.toml` Version Catalog for centralized, type-safe dependency updates.
 
-If the server starts successfully, you'll see the following output:
-
-```
-2024-12-04 14:32:45.584 [main] INFO  Application - Application started in 0.303 seconds.
-2024-12-04 14:32:45.682 [main] INFO  Application - Responding at http://0.0.0.0:8080
-```
-
+### Testing & CI/CD Tooling
+* **Expanded Test Suite:** While the core logic is unit-tested, the repository needs a robust suite of integration tests utilizing Ktor's `MockEngine` or Testcontainers to validate the full HTTP request lifecycle.
+* **Static Analysis & Formatting:** Integrate Detekt for code smell identification and Spotless/ktfmt to enforce a uniform Kotlin style guide.
+* **Git Hooks & Automation:** Implement pre-commit hooks to automatically format code and validate Git commit messages before pushing. Finally, wire up a GitHub Actions pipeline to run the test suite, build the Jib tarball, and execute Detekt on every pull request.
